@@ -64,7 +64,7 @@ def write_order_to_json(item, quantity, price, buyer, date):
         orders_list = data['orders']
         order_info = {'item': item, 'quantity': quantity, 'price': price, 'buyer': buyer, 'date': date}
         orders_list.append(order_info)
-        # json.dump(data, f_in, indent=4)
+        # json.dump(lesson, f_in, indent=4)
         json.dump(data, f_in, indent=4, ensure_ascii=False) # Для отображения русских букв в json
 
 
