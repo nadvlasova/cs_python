@@ -1,5 +1,8 @@
 import json
-from common.variables import MAX_PACKAGE_LENGTH, ENCODING
+from variables import MAX_PACKAGE_LENGTH, ENCODING
+
+"""Утилита приема и декодирования сообщения, принимает байты и выдает словарь, 
+если вместо или вместе с байтами приходит чтщ-то другое - выдает ошибку"""
 
 
 def get_message(client):
@@ -13,7 +16,10 @@ def get_message(client):
     raise ValueError
 
 
+"""Утилита кодирования и отправки сообщения, принимает словарь и отправляет его"""
+
+
 def send_message(sock, message):
     js_message = json.dumps(message)  # Дампим(сбрасывать) сообщение
-    encoded_message = js_message.encode(ENCODING) # Энкодим это сообщение
+    encoded_message = js_message.encode(ENCODING)  # Энкодим это сообщение
     sock.send(encoded_message)
