@@ -4,13 +4,11 @@ import sys
 import os
 import logging
 import logging.handlers
-
 from messenger.common.variables import LOGGING_LEVEL
-
 sys.path.append('../')
 
 # Создание формировщика логов.
-SERVER_FORMATTER = logging.Formatter('%(asctime)s %(filename)s %(message)s')
+SERVER_FORMATTER = logging.Formatter('%(asctime)s %(levelname)s %(filename)s %(message)s')
 
 # Подготовка имени файла для логирования.
 PATH = os.path.dirname(os.path.abspath(__file__))

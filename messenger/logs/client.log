@@ -1,0 +1,6 @@
+
+2022-04-25 07:29:23,839 CRITICAL config_client_log.py Критическая ошибка!!!
+2022-04-25 07:29:23,839 ERROR config_client_log.py Ошибка!
+2022-04-25 07:29:23,839 WARNING config_client_log.py Предупреждение!
+2022-04-25 07:29:23,839 DEBUG config_client_log.py Отладочная информация.
+2022-04-25 07:29:23,839 INFO config_client_log.py Информационное сообщение
