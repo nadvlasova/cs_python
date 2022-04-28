@@ -4,10 +4,12 @@ import json
 import socket
 import time
 import logging
+import logs.config_client_log
 from common.variables import ACTION, PRESENCE, TIME, USER, ACCOUNT_NAME, \
     RESPONSE, ERROR, DEFAULT_IP_ADDRESS, DEFAULT_PORT
 from common.utils import get_message, send_message
 from errors import ReqFieldMissingError
+from decos import log
 
 
 # Инициализация клиентского логгера.
@@ -15,6 +17,7 @@ CLIENT_LOGGER = logging.getLogger('client')
 
 
 # Функция генерации запроса о присутствии клиента на сервере
+@log
 def create_presence(account_name='Guest'):
     out = {
         ACTION: PRESENCE,
@@ -28,6 +31,7 @@ def create_presence(account_name='Guest'):
 
 
 # Функция разбирает ответ сервера и возвращает статус
+@log
 def process_ans(message):
     CLIENT_LOGGER.debug(f'Разбор сообщения от сервера: {message}')
     if RESPONSE in message:
@@ -38,6 +42,7 @@ def process_ans(message):
 
 
 #  Создание парсера аргументов командной строки.
+@log
 def create_arg_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('addr', default=DEFAULT_IP_ADDRESS, nargs='?')  # ?????

@@ -7,12 +7,15 @@ from common.variables import ACTION, ACCOUNT_NAME, RESPONSE, MAX_CONNECTION, \
     PRESENCE, TIME, USER, ERROR, DEFAULT_PORT
 from common.utils import get_message, send_message
 from errors import IncorrectDataRecivedError
+import logs.config_server_log
+from decos import log
 
 #  Инициализация логирования сервера.
 SERVER_LOGGER = logging.getLogger('server')
 
 
 #  Принимаем сообщение клиента(словарь) и проверяем наличие всех данных в сообщениии и их корректность
+@log
 def process_client_message(message):
     SERVER_LOGGER.debug(f'Разбор сообщения от клиента : {message}.')
     if ACTION in message and message[ACTION] == PRESENCE and TIME in message \
@@ -25,6 +28,7 @@ def process_client_message(message):
 
 
 # Парсер аргументов командной строки.
+@log
 def create_arg_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', default=DEFAULT_PORT, type=int, nargs='?')  # ??????
