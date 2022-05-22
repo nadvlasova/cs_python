@@ -12,7 +12,7 @@ Unreachable
 """
 
 from tabulate import tabulate
-from task_2 import host_range_ping
+from task_2_pyqt import host_range_ping
 
 
 def host_range_ping_tab():
