@@ -1,8 +1,9 @@
-import dis
-
 """Мета класс для проверки корректности сервера.
-clsname - экземпляр Метакласса - Server, bases - кортеж базовых классов - (), clsdict - словарь атрибутов и 
-методов экземпляра класса с которым работаем."""
+clsname - экземпляр Метакласса - Server, bases - кортеж базовых классов - (), clsdict - словарь атрибутов и
+методов экземпляра класса с которым работаем, opname - имя операции."""
+
+
+import dis
 
 
 class ServerVerifier(type):
@@ -20,7 +21,7 @@ class ServerVerifier(type):
             # если функция, то разбираем код получая используемые методы и атрибуты.
             else:
                 for i in ret:
-                    print(i)
+                    #print(i)
                     if i.opname == 'LOAD_GLOBAL':
                         if i.argval not in methods:
                             # заполняем список методами, использующимися в функциях класса.
@@ -57,7 +58,7 @@ class ClientVerifier(type):
                         if i.argval not in methods:
                             methods.append(i.argval)
         # Если обнаружено использование недопустимого метода accept, listen, socket бросаем исключение
-        for command in ('accept', 'listen', 'socket'):
+        for command in ('accept', 'listen', 'sockets'):
             if command in methods:
                 raise TypeError('В классе обнаружено использование запрещенного метода.')
         # Вызов get_message  или send_message из utils считаем корректным использованием сокетов

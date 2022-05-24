@@ -6,7 +6,7 @@ import socket
 import sys
 import time
 from common.variables import *
-from common.utils import get_message, send_message
+from common.utils import *
 from errors import IncorrectDataRecivedError
 import logs.config_server_log
 from decos import log
@@ -19,7 +19,7 @@ logger = logging.getLogger('server')
 
 # Парсер аргументов командной строки.
 @log
-def create_arg_parser():
+def arg_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', default=DEFAULT_PORT, type=int, nargs='?')
     parser.add_argument('-a', default='', nargs='?')
@@ -32,8 +32,7 @@ def create_arg_parser():
 # Основной класс сервера.
 class Server(metaclass=ServerVerifier):
     port = Port()
-
-    # addr = Host()
+    addr = Host()
 
     def __init__(self, listen_address, listen_port):
         # Параметры подключения.
@@ -71,7 +70,7 @@ class Server(metaclass=ServerVerifier):
             except OSError:
                 pass
             else:
-                logger.info(f'Установлено соединение с ПК {client_address}.')
+                logger.info(f'Установлено соединение с ПК {client_address}')
                 self.clients.append(client)
 
             recv_data_lst = []
@@ -84,6 +83,7 @@ class Server(metaclass=ServerVerifier):
                     recv_data_lst, send_data_lst, err_lst = select.select(self.clients, self.clients, [], 0)
             except OSError:
                 pass
+
             # Принимаем сообщения и если они есть, кладем их в словарь, если ошибка, то исключаем клиента.
             if recv_data_lst:
                 for client_with_message in recv_data_lst:
@@ -103,8 +103,8 @@ class Server(metaclass=ServerVerifier):
                     del self.names[i[DESTINATION]]
             self.messages.clear()
 
-    """Функция адресной отправки сообщения определенному клиенту. Принимает словарь сообщение,
-    список зарегистрированных пользователей и слушающие сокеты. Ничего не возвращает."""
+    # Функция адресной отправки сообщения определенному клиенту. Принимает словарь сообщение,
+    # список зарегистрированных пользователей и слушающие сокеты. Ничего не возвращает."""
 
     def process_message(self, message, listen_socks):
         # message[DESTINATION] - имя
@@ -156,7 +156,7 @@ class Server(metaclass=ServerVerifier):
 
 def main():
     # Загрузка параметров командной строки, если нет параметров, то задаём значения по умоланию.
-    listen_address, listen_port = create_arg_parser()
+    listen_address, listen_port = arg_parser()
 
     # Создание экземпляра класса - сервера.
     server = Server(listen_address, listen_port)

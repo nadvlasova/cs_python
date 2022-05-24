@@ -34,19 +34,19 @@ class ClientSender(threading.Thread, metaclass=ClientVerifier):
 
     # Функция запрашивает кому отправить сообщение и текст сообщениия и отправляет полученные данные на сервер."""
     def create_message(self):
-        to_user = input('Введите получателя сообщения: ')
+        to = input('Введите получателя сообщения: ')
         message = input('Введите сообщение для отправки: ')
         message_dict = {
             ACTION: MESSAGE,
             SENDER: self.account_name,
-            DESTINATION: to_user,
+            DESTINATION: to,
             TIME: time.time(),
             MESSAGE_TEXT: message
         }
         logger.debug(f'Сформирован словарь сообщения: {message_dict}')
         try:
             send_message(self.sock, message_dict)
-            logger.info(f'Отправлено сообщение для пользователя {to_user}')
+            logger.info(f'Отправлено сообщение для пользователя {to}')
         except:
             logger.critical('Потеряно соединение с сервером.')
             exit(1)
@@ -67,7 +67,7 @@ class ClientSender(threading.Thread, metaclass=ClientVerifier):
                     pass
                 print('Завершение соединения!')
                 logger.info('Завершение работы по команде пользователя.')
-                time.sleep(0.5)  # Задержка необходима, чтобы успело уйти сообщение о выходе
+                time.sleep(5)  # Задержка необходима, чтобы успело уйти сообщение о выходе
                 break
             else:
                 print('Команда не распознана, попробуйте снова. help - вывести поддерживаемые команды.')
@@ -103,6 +103,8 @@ class ClientReader(threading.Thread, metaclass=ClientVerifier):
                 logger.error(f'Не удалось декодировать полученное сообщение.')
             except (OSError, ConnectionError, ConnectionAbortedError, ConnectionResetError, json.JSONDecodeError):
                 logger.critical(f'Потеряно соединение с сервером.')
+                time.sleep(20)
+                print(logger.critical())
                 break
 
 
@@ -136,6 +138,7 @@ def process_ans(message):
 nargs='?' - если присутствует один аргумент – он будет сохранён, иначе – будет использовано значение 
 из ключа defaullogger"""
 
+
 @log
 def create_arg_parser():
     parser = argparse.ArgumentParser()
@@ -158,7 +161,7 @@ def create_arg_parser():
 
 
 def main():
-    """Сообщаем о запуске."""
+    # Сообщаем о запуске.
     print('Консольный менеджер. Клиентский модуль.')
 
     #  Загрузка параметров командной строки.
@@ -179,7 +182,7 @@ def main():
         transport.connect((server_address, server_port))  # Подключаемся к серверу
         send_message(transport, create_presence(client_name))  # Подготавливаем и отправляем сообщение
         answer = process_ans(get_message(transport))  # Ответ с сервера, process_ans-проверяем его доступность
-        logger.info(f'Установлено соединение с сервером. Ответ сервера {answer}')
+        logger.info(f'Установлено соединение с сервером. Ответ сервера: {answer}')
         print(f'Установлено соединение с сервером.')
     except json.JSONDecodeError:
         logger.error('Не удалось декодировать полученную Json строку.')
@@ -206,8 +209,8 @@ def main():
         module_sender.start()
         logger.debug('Запущены процессы.')
 
-        """Watchdog основной цикл, если один из потоков завершён, то значит или потеряно соединение, 
-        или пользователь ввел exit. Поскольку все события обрабатываются в потоках, достаточно просто завершить цикл."""
+        # Watchdog основной цикл, если один из потоков завершён, то значит или потеряно соединение,
+        # или пользователь ввел exit. Поскольку все события обрабатываются в потоках, достаточно просто завершить цикл."""
         while True:
             time.sleep(1)
             if module_receiver.is_alive() and module_sender.is_alive():
