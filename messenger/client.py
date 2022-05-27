@@ -11,7 +11,7 @@ from common.variables import ACTION, PRESENCE, TIME, USER, ACCOUNT_NAME, \
 from common.utils import get_message, send_message
 from errors import ReqFieldMissingError, ServerError, IncorrectDataRecivedError
 from decos import log
-from messenger.metaclasses import ClientVerifier
+from metaclasses import ClientVerifier
 
 # Инициализация клиентского логгера.
 logger = logging.getLogger('client')
@@ -95,7 +95,7 @@ class ClientReader(threading.Thread, metaclass=ClientVerifier):
                 if ACTION in message and message[ACTION] == MESSAGE and \
                         SENDER in message and DESTINATION in message \
                         and MESSAGE_TEXT in message and message[DESTINATION] == self.account_name:
-                    print(f'Получено сообщение от пользователя {message[SENDER]}:\n{message[MESSAGE_TEXT]}')
+                    print(f'\nПолучено сообщение от пользователя {message[SENDER]}:\n{message[MESSAGE_TEXT]}')
                     logger.info(f'Получено сообщение от пользователя {message[SENDER]}:\n{message[MESSAGE_TEXT]}')
                 else:
                     logger.error(f'Получено некорректное сообщение с сервера: {message}')
@@ -134,9 +134,9 @@ def process_ans(message):
     raise ReqFieldMissingError(RESPONSE)
 
 
-"""Создание парсера аргументов командной строки. Читаем параметры, возвращаем 3 параметра.
-nargs='?' - если присутствует один аргумент – он будет сохранён, иначе – будет использовано значение 
-из ключа defaullogger"""
+# """Создание парсера аргументов командной строки. Читаем параметры, возвращаем 3 параметра.
+# nargs='?' - если присутствует один аргумент – он будет сохранён, иначе – будет использовано значение
+# из ключа defaullogger"""
 
 
 @log
@@ -174,7 +174,7 @@ def main():
         print(f'Клиентский модуль запущен с именем: {client_name}')
 
     logger.info(f'Запущен клиент с параметрами: '
-                f'адрес сервера: {server_address}, порт: {server_port}, имя пользователя: {client_name}.')
+                f'адрес сервера: {server_address}, порт: {server_port}, имя пользователя: {client_name}')
 
     # Инициализация сокета и сообщение серверу о нашем появлении.
     try:
@@ -204,7 +204,7 @@ def main():
         module_receiver.start()
 
         # затем запускаем отправку сообщений и взаимодействие с пользователем.
-        module_sender = ClientSender(transport, client_name)
+        module_sender = ClientSender(client_name, transport)
         module_sender.daemon = True
         module_sender.start()
         logger.debug('Запущены процессы.')
