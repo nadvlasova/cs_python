@@ -32,14 +32,31 @@ class ServerStorage:
             self.name = name
             self.date_time = date
             self.ip = ip
+            self.port = port
 
-    # Создаем движок базы данных.
+    # Класс - отображение таблицы контактов пользователей
+    class UsersContacts:
+        def __init__(self, user, contact):
+            self.id = None
+            self.user = user
+            self.contact = contact
+
+    # Класс отображение таблицы истории действий
+    class UsersHistory:
+        def __init__(self, user):
+            self.id = None
+            self.user = user
+            self.sent = 0
+            self.accepted = 0
+
+    # Создаем движок базы данных. Традиционный подход.
     # SERVER_DATABASE - sqlite://server_base.db3
     # echo=False - отключаем ведение лога (вывод sql-запросов).
     # pool_recycle - По умолчанию соединение с БД через 8 часов простоя обрывается,
     # чтобы этого не случилось добавляем опцию pool_recycle = 7200(т.е. переустановка соединения через 2 часа)
-    def __init__(self):
-        self.database_engine = create_engine(SERVER_DATABASE, echo=False, pool_recycle=7200)
+    def __init__(self, path):
+        self.database_engine = create_engine(f'sqlite:///{path}', echo=False, pool_recycle=7200,
+                                             connect_args={'check_same_thread': False})
 
         # Создаем объект MetaData
         self.metadata = MetaData()
@@ -56,7 +73,7 @@ class ServerStorage:
                                    Column('id', Integer, primary_key=True),
                                    Column('user', ForeignKey('Users.id'), unique=True),
                                    Column('ip_address', String),
-                                   Column('port', String),
+                                   Column('port', Integer),
                                    Column('login_time', DateTime)
                                    )
 
@@ -69,6 +86,21 @@ class ServerStorage:
                                    Column('port', String)
                                    )
 
+        # Создаем таблицу контактов пользователей.
+        contacts = Table('Contacts', self.metadata,
+                         Column('id', Integer, primary_key=True),
+                         Column('user', ForeignKey('Users.id')),
+                         Column('contact', ForeignKey('Users.id'))
+                         )
+
+        # Создаем таблицу истории пользователей.
+        users_history_table = Table('History', self.metadata,
+                                    Column('id', Integer, primary_key=True),
+                                    Column('user', ForeignKey('Users.id')),
+                                    Column('sent', Integer),
+                                    Column('accepted', Integer)
+                                    )
+
         # Создаем таблицы.
         self.metadata.create_all(self.database_engine)
 
@@ -76,10 +108,12 @@ class ServerStorage:
         mapper(self.AllUsers, users_table)
         mapper(self.ActiveUsers, active_users_table)
         mapper(self.LoginHistory, user_login_history)
+        mapper(self.UsersContacts, contacts)
+        mapper(self.UsersHistory, users_history_table)
 
         # Создаем сессию
         Session = sessionmaker(bind=self.database_engine)
-        self.session = Session
+        self.session = Session()
 
         # Если в таблице активных пользователей есть записи, то их необходимо удалить.
         # Когда устанавливаем соединение, очищаем таблицу активных пользователей.
@@ -89,19 +123,23 @@ class ServerStorage:
 
     # Функция выполняющаяся при входе пользователя, записывает в базу факт входа.
     def user_login(self, username, ip_address, port):
-        print(username, ip_address, port)
+        # print(username, ip_address, port)
         # Запрос в таблицу пользователей на наличие там пользователя с таким именем.
         rez = self.session.query(self.AllUsers).filter_by(name=username)
+
         # Если имя пользователя уже присутствует в таблице, обновляем время последнего входа.
         if rez.count():
             user = rez.first()
             user.last_login = datetime.datetime.now()
+
         # Если такого пользователя нет, то создаем нового.
         else:
             # Создаем экземпляр класса self.AllUsers, через который передаем данные в таблицу.
             user = self.AllUsers(username)
             self.session.add(user)
             self.session.commit()  # Коммит здесь нужен, чтобы присвоился ID
+            user_in_history = self.UsersHistory(user.id)
+            self.session.add(user_in_history)
 
         # Теперь можно создавать запись в таблицу активных пользователей о факте входа.
         # Создаем экземпляр класса self.ActiveUsers , через который передаем данные в таблицу.
@@ -119,7 +157,7 @@ class ServerStorage:
     # Функция фиксирующая отключение пользователя.
     def user_logout(self, username):
         # Запрашиваем пользователя который выходит из таблицы AllUsers
-        user = self.session.query(self.AllUsers).filter_by(name=username).first
+        user = self.session.query(self.AllUsers).filter_by(name=username).first()
 
         # Удаляем его из таблицы активных пользователей.
         # Удаляем запись из таблицы ActiveUsers.
@@ -128,11 +166,58 @@ class ServerStorage:
         # Применяем изменения.
         self.session.commit()
 
+    # Функция фиксирует передачу сообщения и делает соответствующие отметки в БД.
+    def process_message(self, sender, recipient):
+        # Получаем ID отправителя и получателя.
+        sender = self.session.query(self.AllUsers).filter_by(name=sender).first().id
+        recipient = self.session.query(self.AllUsers).filter_by(name=recipient).first().id
+
+        # Запрашиваем строки из истории и увеличиваем счетчики.
+        sender_row = self.session.query(self.UsersHistory).filter_by(user=sender).first()
+        sender_row.sent += 1
+        recipient_row = self.session.query(self.UsersHistory).filter_by(user=recipient).first()
+        recipient_row.accepted += 1
+
+        self.session.commit()
+
+    # Функция добавляет контакт для пользователя.
+    def add_contact(self, user, contact):
+        # Получаем ID пользователей.
+        user = self.session.query(self.AllUsers).filter_by(name=user).first()
+        contact = self.session.query(self.AllUsers).filter_by(name=contact).first()
+
+        # Проверяем, что не дубль и что контакт может существовать(полю пользователь мы доверяем)
+        if not contact or self.session.query(self.UsersContacts).filter_by(user=user.id, contact=contact.id).count():
+            return
+
+        # Создаем объект и заносим его в базу.
+        contact_row = self.UsersContacts(user.id, contact.id)
+        self.session.add(contact_row)
+        self.session.commit()
+
+    # Функция удаляет контакт из базы данных.
+    def remove_contact(self, user, contact):
+        # Получаем ID пользователей.
+        user = self.session.query(self.AllUsers).filter_by(name=user).first()
+        contact = self.session.query(self.AllUsers).filter_by(name=contact).first()
+
+        # Проверяем, что контакт может существовать(полю пользователь мы доверяем).
+        if not contact:
+            return
+
+        # Удаляем требуемое.
+        print(self.session.query(self.UsersContacts).filter(
+            self.UsersContacts.user == user.id,
+            self.UsersContacts.contact == contact.id
+        ).delete())
+        self.session.commit()
+
     # Функция возвращает список известных пользователей со временем последнего входа.
     def users_list(self):
+        # Запрос строк таблицы пользователей.
         query = self.session.query(
             self.AllUsers.name,
-            self.AllUsers.last_login,
+            self.AllUsers.last_login
         )
         # Возвращаем список кортежей.
         return query.all()
@@ -145,7 +230,7 @@ class ServerStorage:
             self.ActiveUsers.ip_address,
             self.ActiveUsers.port,
             self.ActiveUsers.login_time
-        ).join(self.AllUsers)
+        )
         # Возвращаем список кортежей.
         return query.all()
 
@@ -157,10 +242,35 @@ class ServerStorage:
             self.LoginHistory.date_time,
             self.LoginHistory.ip,
             self.LoginHistory.port
-        ).join(self.AllUsers)
+            ).join(self.AllUsers)
         # Если было указано имя пользователя, то фильтруем по нему.
         if username:
             query = query.filter(self.AllUsers.name == username)
+        # Возвращаем список кортежей.
+        return query.all()
+
+    # Функция возвращает список контактов пользователя.
+    def get_contacts(self, username):
+        # Запрашиваем указанного пользователя.
+        user = self.session.query(self.AllUsers).filter_by(name=username).one()
+
+        # Запрашиваем его список контактов.
+        query = self.session.query(self.UsersContacts, self.AllUsers.name). \
+            filter_by(user=user.id). \
+            join(self.AllUsers, self.UsersContacts.contact == self.AllUsers.id)
+
+        # Выбираем только имена пользователей и возвращаем их.
+        return [contact[1] for contact in query.all()]
+
+    # Функция возвращает количество переданных и полученных сообщений
+    def message_history(self):
+        query = self.session.query(
+            self.AllUsers.name,
+            self.AllUsers.last_login,
+            self.UsersHistory.sent,
+            self.UsersHistory.accepted
+        ).join(self.AllUsers)
+        # Возвращаем список кортежей.
         return query.all()
 
 
@@ -170,7 +280,5 @@ if __name__ == '__main__':
     test_db.user_login('1111', '92.124.28.152', 8080)
     test_db.user_login('test1', '92.124.28.152', 8081)
     print(test_db.users_list())
-
-
-
-
+    test_db.process_message('Mes1', 'Mes2')
+    print(test_db.message_history())

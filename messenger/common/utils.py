@@ -1,8 +1,8 @@
 import json
 import sys
-from messenger.common.variables import MAX_PACKAGE_LENGTH, ENCODING
-from messenger.decos import log
-from messenger.errors import IncorrectDataRecivedError, NonDictInputError
+from common.variables import MAX_PACKAGE_LENGTH, ENCODING
+from decos import log
+from errors import IncorrectDataRecivedError, NonDictInputError
 sys.path.append('../')
 
 """Утилита приема и декодирования сообщения, принимает байты и выдает словарь, 

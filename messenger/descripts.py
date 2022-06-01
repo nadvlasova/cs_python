@@ -7,6 +7,7 @@ if sys.argv[0].find('client') == -1:
 else:
     logger = logging.getLogger('client')  # Иначе это сервер.
 
+
 class Port:
     def __set__(self, instance, value):
         if not 1023 < value <65536:

@@ -4,7 +4,7 @@ import sys
 import os
 import logging
 import logging.handlers
-from messenger.common.variables import LOGGING_LEVEL
+from common.variables import LOGGING_LEVEL
 sys.path.append('../')
 
 # Создание формировщика логов.

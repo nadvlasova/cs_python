@@ -3,7 +3,7 @@
 import sys
 import os
 import logging
-from messenger.common.variables import LOGGING_LEVEL
+from common.variables import LOGGING_LEVEL
 
 sys.path.append('../')
 
