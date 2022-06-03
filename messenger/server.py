@@ -1,25 +1,18 @@
 import argparse
 import configparser
-import json
-import logging
 import os.path
 import select
 import socket
-import sys
 import threading
-import time
 from common.variables import *
 from common.utils import *
-from errors import IncorrectDataRecivedError
-import logs.config_server_log
-from decos import log
+from common.decos import log
 from descripts import Port
 from metaclasses import ServerVerifier
 from server_database import ServerStorage
 from PyQt5.QtWidgets import QApplication, QMessageBox
 from PyQt5.QtCore import QTimer
 from server_gui import MainWindow, gui_create_model, HistoryWindow, create_stat_model, ConfigWindow
-from PyQt5.QtGui import QStandardItemModel, QStandardItem
 
 logger = logging.getLogger('server')
 # Флаг, что был подключен новый пользователь нужен, чтобы не мучать БД постоянными запросами на обновление.
@@ -74,6 +67,7 @@ class Server(threading.Thread, metaclass=ServerVerifier):
         self.sock.listen()
 
     def run(self):
+        global new_connection
         self.init_socket()
 
         # Основной цикл программы сервера.
@@ -112,6 +106,8 @@ class Server(threading.Thread, metaclass=ServerVerifier):
                                 del self.names[name]
                                 break
                         self.clients.remove(client_with_message)
+                        with conflag_lock:
+                            new_connection = True
 
             # Если есть сообщения обрабатываем каждое.
             for message in self.messages:
@@ -122,6 +118,8 @@ class Server(threading.Thread, metaclass=ServerVerifier):
                     self.clients.remove(self.names[message[DESTINATION]])
                     self.database.user_logout(message[DESTINATION])
                     del self.names[message[DESTINATION]]
+                    with conflag_lock:
+                        new_connection = True
             self.messages.clear()
 
     # Функция адресной отправки сообщения определенному клиенту. Принимает словарь сообщение,
@@ -166,8 +164,13 @@ class Server(threading.Thread, metaclass=ServerVerifier):
         elif ACTION in message and message[ACTION] == MESSAGE and DESTINATION in message and \
                 TIME in message and SENDER in message and MESSAGE_TEXT in message and \
                 self.names[message[SENDER]] == client:
-            self.messages.append(message)
-            self.database.process_message(message[SENDER], [DESTINATION])
+            if message[DESTINATION] in self.names:
+                self.messages.append(message)
+                self.database.process_message(message[SENDER], [DESTINATION])
+            else:
+                response = RESPONSE_400
+                response[ERROR] = 'Пользователь не зарегистрирован на сервере.'
+                send_message(client, response)
             return
         #  Если клиент выходит:
         elif ACTION in message and message[ACTION] == EXIT and ACCOUNT_NAME in message \
@@ -214,13 +217,25 @@ class Server(threading.Thread, metaclass=ServerVerifier):
             send_message(client, response)
             return
 
+# Загрузка файла конфигурации
+def config_load():
+    config = configparser.ConfigParser()
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    config.read(f"{dir_path}/{'server.ini'}")
+    # Если конфиг файл загружен правильно, запускаемся, иначе конфиг по умолчанию.
+    if 'SETTINGS' in config:
+        return config
+    else:
+        config.add_section('SETTINGS')
+        config.set('SETTINGS', 'Default_port', str(DEFAULT_PORT))
+        config.set('SETTINGS', 'Listen_Address', '')
+        config.set('SETTINGS', 'Database_path', '')
+        config.set('SETTINGS', 'Database_file', 'server_database.db3')
+        return config
 
 def main():
     # Загрузка файла конфигурации сервера.
-    config = configparser.ConfigParser()
-
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    config.read(f'{dir_path}/{"server.ini"}')
+    config = config_load()
 
     # Загрузка параметров командной строки, если нет параметров, то задаём значения по умоланию.
     listen_address, listen_port = arg_parser(
@@ -267,7 +282,7 @@ def main():
         stat_window.history_table.setModel(create_stat_model(database))
         stat_window.history_table.resizeColumnsToContents()
         stat_window.history_table.resizeRowsToContents()
-        # stat_window.show()
+        stat_window.show()
 
     # Функция создающая окно с настройками сервера.
     def server_config():
@@ -294,8 +309,8 @@ def main():
             config['SETTINGS']['Listen_Address'] = config_window.ip.text()
             if 1023 < port < 65536:
                 config['SETTINGS']['Default_port'] = str(port)
-                print(port)
-                with open('server.ini', 'w') as conf:
+                dir_path = os.path.dirname(os.path.realpath(__file__))
+                with open(f"{dir_path}/{'server.ini'}", 'w') as conf:
                     config.write(conf)
                     message.information(config_window, 'OK', 'Настройки успешно сохранены!')
             else:

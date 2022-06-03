@@ -38,8 +38,6 @@ RESPONSE_200 = {RESPONSE: 200}
 RESPONSE_202 = {RESPONSE: 202,
                 LIST_INFO: None}
 # 400
-RESPONSE_400 = {
-    RESPONSE: 400,
-    ERROR: None
-}
+RESPONSE_400 = {RESPONSE: 400,
+                ERROR: None}
 
