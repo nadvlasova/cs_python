@@ -14,7 +14,15 @@ from PyQt5.QtWidgets import QApplication, QMessageBox
 from PyQt5.QtCore import QTimer
 from server_gui import MainWindow, gui_create_model, HistoryWindow, create_stat_model, ConfigWindow
 
+
+
+
+
+
+
+# Инициализация логирования сервера.
 logger = logging.getLogger('server')
+
 # Флаг, что был подключен новый пользователь нужен, чтобы не мучать БД постоянными запросами на обновление.
 new_connection = False
 conflag_lock = threading.Lock()
@@ -35,16 +43,17 @@ def arg_parser(default_port, default_address):
 # Основной класс сервера.
 class Server(threading.Thread, metaclass=ServerVerifier):
     port = Port()
-    # addr = Host()
 
     def __init__(self, listen_address, listen_port, database):
         # Параметры подключения.
         self.addr = listen_address
         self.port = listen_port
 
-        self.database = database  # База данных сервера.
+        # База данных сервера.
+        self.database = database
 
-        self.clients = []  # Список подключенных клиентов.
+        # Список подключенных клиентов.
+        self.clients = []
 
         self.messages = []  # Список сообщений на отправку.
 
@@ -56,7 +65,6 @@ class Server(threading.Thread, metaclass=ServerVerifier):
         logger.info(f'Запущен сервер, порт для подключений: {self.port},'
                     f'адрес с которого принимаются подключения: {self.addr}.'
                     f'Если адрес не указан, принимаются соединения с любых адресов.')
-
         # Подготовка сокета.
         transport = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         transport.bind((self.addr, self.port))
@@ -67,6 +75,7 @@ class Server(threading.Thread, metaclass=ServerVerifier):
         self.sock.listen()
 
     def run(self):
+        # Инициализация Сокета
         global new_connection
         self.init_socket()
 
@@ -84,7 +93,6 @@ class Server(threading.Thread, metaclass=ServerVerifier):
             recv_data_lst = []
             send_data_lst = []
             err_lst = []
-
             # Проверяем на наличие ждущих клиентов.
             try:
                 if self.clients:
@@ -97,7 +105,7 @@ class Server(threading.Thread, metaclass=ServerVerifier):
                 for client_with_message in recv_data_lst:
                     try:
                         self.process_client_message(get_message(client_with_message), client_with_message)
-                    except (OSError):
+                    except OSError:
                         # Ищем клиента в словаре клиентов и удаляем его из базы подключенных.
                         logger.info(f'Клиент {client_with_message.getpeername()} отключился от сервера.')
                         for name in self.names:
@@ -124,7 +132,6 @@ class Server(threading.Thread, metaclass=ServerVerifier):
 
     # Функция адресной отправки сообщения определенному клиенту. Принимает словарь сообщение,
     # список зарегистрированных пользователей и слушающие сокеты. Ничего не возвращает."""
-
     def process_message(self, message, listen_socks):
         # message[DESTINATION] - имя
         # names[message[DESTINATION]] - получатель
@@ -167,11 +174,13 @@ class Server(threading.Thread, metaclass=ServerVerifier):
             if message[DESTINATION] in self.names:
                 self.messages.append(message)
                 self.database.process_message(message[SENDER], [DESTINATION])
+                send_message(client, RESPONSE_200)
             else:
                 response = RESPONSE_400
                 response[ERROR] = 'Пользователь не зарегистрирован на сервере.'
                 send_message(client, response)
             return
+
         #  Если клиент выходит:
         elif ACTION in message and message[ACTION] == EXIT and ACCOUNT_NAME in message \
                 and self.names[message[ACCOUNT_NAME]] == client:
@@ -217,6 +226,7 @@ class Server(threading.Thread, metaclass=ServerVerifier):
             send_message(client, response)
             return
 
+
 # Загрузка файла конфигурации
 def config_load():
     config = configparser.ConfigParser()
@@ -233,19 +243,16 @@ def config_load():
         config.set('SETTINGS', 'Database_file', 'server_database.db3')
         return config
 
+
 def main():
     # Загрузка файла конфигурации сервера.
     config = config_load()
 
     # Загрузка параметров командной строки, если нет параметров, то задаём значения по умоланию.
-    listen_address, listen_port = arg_parser(
-        config['SETTINGS']['Default_port'], config['SETTINGS']['Listen_Address'])
+    listen_address, listen_port = arg_parser(config['SETTINGS']['Default_port'], config['SETTINGS']['Listen_Address'])
 
     # Инициализация базы данных
-    database = ServerStorage(
-        os.path.join(
-            config['SETTINGS']['Database_path'],
-            config['SETTINGS']['Database_file']))
+    database = ServerStorage(os.path.join(config['SETTINGS']['Database_path'], config['SETTINGS']['Database_file']))
 
     # Создание экземпляра класса - сервера и его запуск.
     server = Server(listen_address, listen_port, database)
@@ -253,15 +260,12 @@ def main():
     server.start()  # Запуск в отдельном потоке(помним что start)#threding
 
     # Создаем графическое окружение для сервера:
-    server_app = QApplication(sys.argv)  # Создаем приложение
-    main_window = MainWindow()
-    # Запуск работает паралельно сервера к окну
-    # В главном потоке запускаем наш GUI - графический интерфейс пользователя.
+    server_app = QApplication(sys.argv)  # Создаем приложение. Запуск работает паралельно сервера к окну
+    main_window = MainWindow()  # В главном потоке запускаем наш GUI - графический интерфейс пользователя.
 
     # Инициализируем параметры в окна. Главное окно.
     main_window.statusBar().showMessage('Server Working')  # подвал
-    main_window.active_clients_table.setModel(
-        gui_create_model(database))  # заполняем таблицу основного окна с разметкой
+    main_window.active_clients_table.setModel(gui_create_model(database))  # заполняем таблицу основ-го окна с разметкой
     main_window.active_clients_table.resizeColumnsToContents()
     main_window.active_clients_table.resizeRowsToContents()
 
