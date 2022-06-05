@@ -87,13 +87,13 @@ class MainWindow(QMainWindow):
 
         # Надпись о том, что ниже список подключённых клиентов
         self.label = QLabel('Список подключённых клиентов:', self)
-        self.label.setFixedSize(240, 15)
+        self.label.setFixedSize(240, 30)
         self.label.move(10, 25)
 
         # Окно со списком подключённых клиентов.
         self.active_clients_table = QTableView(self)
-        self.active_clients_table.move(10, 45)
-        self.active_clients_table.setFixedSize(780, 400)
+        self.active_clients_table.move(10, 55)
+        self.active_clients_table.setFixedSize(750, 380)
 
         # Последним параметром отображаем окно.
         self.show()
@@ -108,7 +108,7 @@ class HistoryWindow(QDialog):
     def initUI(self):
         # Настройки окна:
         self.setWindowTitle('Статистика клиентов')
-        self.setFixedSize(600, 700)
+        self.setFixedSize(800, 700)
         self.setAttribute(Qt.WA_DeleteOnClose)
 
         # Кнапка закрытия окна
