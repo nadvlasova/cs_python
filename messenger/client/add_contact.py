@@ -22,15 +22,15 @@ class AddContactDialog(QDialog):
         self.setModal(True)
 
         self.selector_label = QLabel('Выберите контакт для добавления: ', self)
-        self.selector_label.setFixedSize(200, 20)
+        self.selector_label.setFixedSize(260, 20)
         self.selector_label.move(10, 0)
 
         self.selector = QComboBox(self)
         self.selector.setFixedSize(200, 20)
         self.selector.move(10, 30)
 
-        self.btn_refresh = QPushButton('Обновить список')
-        self.btn_refresh.setFixedSize(100, 30)
+        self.btn_refresh = QPushButton('Обновить список', self)
+        self.btn_refresh.setFixedSize(150, 20)
         self.btn_refresh.move(60, 60)
 
         self.btn_ok = QPushButton('Добавить', self)
