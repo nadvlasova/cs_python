@@ -1,4 +1,5 @@
-from PyQt5.QtWidgets import QMainWindow, QAction, qApp, QApplication, QLabel, QTableView
+"""Класс - основное окно сервера."""
+from PyQt5.QtWidgets import QMainWindow, QAction, qApp, QLabel, QTableView
 from PyQt5.QtGui import QStandardItemModel, QStandardItem
 from PyQt5.QtCore import QTimer
 from server.stat_window import StatWindow
@@ -7,10 +8,9 @@ from server.add_user import RegisterUser
 from server.remove_user import DelUserDialog
 
 
-# Класс - основное окно сервера.
 class MainWindow(QMainWindow):
     def __init__(self, database, server, config):
-        # Конструктор предка.
+        # Конструктор предка
         super().__init__()
 
         # База данных сервера.
@@ -39,11 +39,11 @@ class MainWindow(QMainWindow):
         # Кнопка вывести историю сообщений.
         self.show_history_button = QAction('История клиентов', self)
 
-        # Статусбар.
+        # Статусбар
         self.statusBar()
         self.statusBar().showMessage('Server Working')
 
-        # Тулбар.
+        # Тулбар
         self.toolbar = self.addToolBar('MainBar')
         self.toolbar.addAction(self.exitAction)
         self.toolbar.addAction(self.refresh_button)
@@ -52,12 +52,13 @@ class MainWindow(QMainWindow):
         self.toolbar.addAction(self.register_btn)
         self.toolbar.addAction(self.remove_btn)
 
-        # Настройки геометрии основного окна. Поскольку работать с динамическими размерами мы не умеем,
-        #  и мало времени на изучение, размер окна фиксирован.
+        # Настройки геометрии основного окна
+        # Поскольку работать с динамическими размерами мы не умеем, и мало
+        # времени на изучение, размер окна фиксирован.
         self.setFixedSize(800, 600)
         self.setWindowTitle('Messaging Server alpha release')
 
-        # Надпись о том, что ниже список подключённых клиентов.
+        # Надпись о том, что ниже список подключённых клиентов
         self.label = QLabel('Список подключённых клиентов:', self)
         self.label.setFixedSize(240, 15)
         self.label.move(10, 25)
@@ -67,12 +68,12 @@ class MainWindow(QMainWindow):
         self.active_clients_table.move(10, 45)
         self.active_clients_table.setFixedSize(780, 400)
 
-        # Таймер, обновляющий список клиентов 1 раз в секунду.
+        # Таймер, обновляющий список клиентов 1 раз в секунду
         self.timer = QTimer()
         self.timer.timeout.connect(self.create_users_model)
         self.timer.start(1000)
 
-        # Связываем кнопки с процедурами.
+        # Связываем кнопки с процедурами
         self.refresh_button.triggered.connect(self.create_users_model)
         self.show_history_button.triggered.connect(self.show_statistics)
         self.config_btn.triggered.connect(self.server_config)
@@ -82,11 +83,12 @@ class MainWindow(QMainWindow):
         # Последним параметром отображаем окно.
         self.show()
 
-    # Метод заполняющий таблицу активных пользователей.
     def create_users_model(self):
+        """Метод заполняющий таблицу активных пользователей."""
         list_users = self.database.active_users_list()
-        list = QStandardItemModel()
-        list.setHorizontalHeaderLabels(['Имя Клиента', 'IP Адрес', 'Порт', 'Время подключения'])
+        list_active_users = QStandardItemModel()
+        list_active_users.setHorizontalHeaderLabels(
+            ['Имя Клиента', 'IP Адрес', 'Порт', 'Время подключения'])
         for row in list_users:
             user, ip, port, time = row
             user = QStandardItem(user)
@@ -95,34 +97,35 @@ class MainWindow(QMainWindow):
             ip.setEditable(False)
             port = QStandardItem(str(port))
             port.setEditable(False)
-            # Уберём милисекунды из строки времени, т.к. такая точность не требуется.
+            # Уберём милисекунды из строки времени, т.к. такая точность не
+            # требуется.
             time = QStandardItem(str(time.replace(microsecond=0)))
             time.setEditable(False)
-            list.appendRow([user, ip, port, time])
-        self.active_clients_table.setModel(list)
+            list_active_users.appendRow([user, ip, port, time])
+        self.active_clients_table.setModel(list_active_users)
         self.active_clients_table.resizeColumnsToContents()
         self.active_clients_table.resizeRowsToContents()
 
-    # Метод создающий окно со статистикой клиентов.
     def show_statistics(self):
+        """Метод создающий окно со статистикой клиентов."""
         global stat_window
         stat_window = StatWindow(self.database)
         stat_window.show()
 
-    # Метод создающий окно с настройками сервера.
     def server_config(self):
+        """Метод создающий окно с настройками сервера."""
         global config_window
         # Создаём окно и заносим в него текущие параметры
         config_window = ConfigWindow(self.config)
 
-    # Метод создающий окно регистрации пользователя.
     def reg_user(self):
+        """Метод создающий окно регистрации пользователя."""
         global reg_window
         reg_window = RegisterUser(self.database, self.server_thread)
         reg_window.show()
 
-    # Метод создающий окно удаления пользователя.
     def rem_user(self):
+        """Метод создающий окно удаления пользователя."""
         global rem_window
         rem_window = DelUserDialog(self.database, self.server_thread)
         rem_window.show()

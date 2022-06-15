@@ -1,23 +1,25 @@
+""" Диалог удаления контакта. Прделагает текущий список контактов,
+    не имеет обработчиков для действий."""
 import logging
 
-from PyQt5.QtWidgets import QDialog, QLabel, QComboBox, QPushButton, QApplication
+from PyQt5.QtWidgets import QDialog, QLabel, QComboBox, QPushButton, \
+    QApplication
 from PyQt5.QtCore import Qt
 
 logger = logging.getLogger('client')
 
 
-# Диалог выбора контакта для удаления
 class DelContactDialog(QDialog):
     def __init__(self, database):
         super().__init__()
         self.database = database
 
         self.setFixedSize(350, 120)
-        self.setWindowTitle('Выберите контакт для удаления: ')
+        self.setWindowTitle('Выберите контакт для удаления:')
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.setModal(True)
 
-        self.selector_label = QLabel('Выберите контакт для удаления: ', self)
+        self.selector_label = QLabel('Выберите контакт для удаления:', self)
         self.selector_label.setFixedSize(200, 20)
         self.selector_label.move(10, 0)
 

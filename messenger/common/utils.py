@@ -1,26 +1,39 @@
+""" Функции отправки и приема сообщений."""
 import json
 import sys
-from common.variables import *
-from common.decos import log
+
+from .decos import log
+from .variables import MAX_PACKAGE_LENGTH, ENCODING
+
 sys.path.append('../')
 
-# Утилита приема и декодирования сообщения, принимает байты и выдает словарь,
-# если вместо или вместе с байтами приходит что-то другое - выдает ошибку"""
 
 @log
 def get_message(client):
-    encoded_response = client.recv(MAX_PACKAGE_LENGTH)  # получаем строку в байтах
-    json_response = encoded_response.decode(ENCODING)  # Декодируем в UTF-8
-    response = json.loads(json_response)  # Переводим данные в словарь
+    """
+    Функция приёма сообщений от удалённых компьютеров.
+    Принимает сообщения JSON, декодирует полученное сообщение
+    и проверяет что получен словарь.
+    :param client: сокет для передачи данных.
+    :return: словарь - сообщение.
+    """
+    encoded_response = client.recv(MAX_PACKAGE_LENGTH)
+    json_response = encoded_response.decode(ENCODING)
+    response = json.loads(json_response)
     if isinstance(response, dict):
         return response
-    else:
-        raise TypeError
+    raise TypeError
 
-# Утилита кодирования и отправки сообщения, принимает словарь и отправляет его
 
 @log
 def send_message(sock, message):
-    js_message = json.dumps(message)  # Дампим(сбрасывать) сообщение
-    encoded_message = js_message.encode(ENCODING)  # Энкодим это сообщение
+    """
+    Функция отправки словарей через сокет.
+    Кодирует словарь в формат JSON и отправляет через сокет.
+    :param sock: сокет для передачи
+    :param message: словарь для передачи
+    :return: ничего не возвращает
+    """
+    js_message = json.dumps(message)
+    encoded_message = js_message.encode(ENCODING)
     sock.send(encoded_message)

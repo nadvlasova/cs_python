@@ -1,9 +1,8 @@
-from PyQt5.QtWidgets import QDialog, QLabel, QComboBox, QPushButton, QApplication
+""" Класс - диалог выбора контакта для удаления."""
+from PyQt5.QtWidgets import QDialog, QLabel, QComboBox, QPushButton
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QStandardItemModel, QStandardItem
 
 
-# Класс - диалог выбора контакта для удаления.
 class DelUserDialog(QDialog):
     def __init__(self, database, server):
         super().__init__()
@@ -15,7 +14,8 @@ class DelUserDialog(QDialog):
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.setModal(True)
 
-        self.selector_label = QLabel('Выберите пользователя для удаления:', self)
+        self.selector_label = QLabel(
+            'Выберите пользователя для удаления:', self)
         self.selector_label.setFixedSize(200, 20)
         self.selector_label.move(10, 0)
 
@@ -31,16 +31,18 @@ class DelUserDialog(QDialog):
         self.btn_cancel = QPushButton('Отмена', self)
         self.btn_cancel.setFixedSize(100, 30)
         self.btn_cancel.move(230, 60)
-        self.btn_cancel.clicked.connect(self.close)
+        self.btn_cancel.clicked.connect(QDialog.close)
+        # self.btn_cancel.clicked.connect(self.close)
 
         self.all_users_fill()
 
-    # Метод заполняющий список пользователей.
     def all_users_fill(self):
-        self.selector.addItems([item[0] for item in self.database.users_list()])
+        """Метод заполняющий список пользователей."""
+        self.selector.addItems([item[0]
+                                for item in self.database.users_list()])
 
-    # Метод - обработчик удаления пользователя.
     def remove_user(self):
+        """Метод - обработчик удаления пользователя."""
         self.database.remove_user(self.selector.currentText())
         if self.selector.currentText() in self.server.names:
             sock = self.server.names[self.selector.currentText()]
