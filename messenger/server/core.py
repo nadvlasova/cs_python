@@ -1,14 +1,14 @@
-""" Основной класс сервера. Принимает содинения, словари - пакеты от клиентов,
- обрабатывает поступающие сообщения. Работает в качестве отдельного потока.
- Тут же метод авторизации пользователя."""
-
-import threading
+""" Логика работы сервера."""
+import os
 import select
 import socket
 import json
+
+import threading
 import hmac
 import binascii
-import os
+import logging
+
 
 from common.descryptors import Port
 from common.variables import *
@@ -16,14 +16,18 @@ from common.utils import send_message, get_message
 from common.decos import login_required
 
 # Загрузка логера
-logger = logging.getLogger('server')
+Logger = logging.getLogger('server')
 
 
 class MessageProcessor(threading.Thread):
+    """ Основной класс сервера. Принимает содинения, словари - пакеты от
+    клиентов, обрабатывает поступающие сообщения. Работает в качестве
+    отдельного потока. Тут же метод авторизации пользователя."""
+
     port = Port()
 
     def __init__(self, listen_address, listen_port, database):
-        # Параметры подключения
+        """ Инициализация Параметров подключения."""
         self.addr = listen_address
         self.port = listen_port
 
@@ -49,8 +53,8 @@ class MessageProcessor(threading.Thread):
         # Конструктор предка
         super().__init__()
 
-    # Метод основной цикл потока.
     def run(self):
+        """ Метод основной цикл потока."""
         # Инициализация Сокета
         self.init_socket()
 
@@ -62,7 +66,7 @@ class MessageProcessor(threading.Thread):
             except OSError:
                 pass
             else:
-                logger.info(f'Установлено соедение с ПК {client_address}')
+                Logger.info(f'Установлено соединение с ПК {client_address}')
                 client.settimeout(5)
                 self.clients.append(client)
 
@@ -76,7 +80,7 @@ class MessageProcessor(threading.Thread):
                         self.error_sockets = select.select(
                             self.clients, self.clients, [], 0)
             except OSError as err:
-                logger.error(f'Ошибка работы с сокетами: {err.errno}')
+                Logger.error(f'Ошибка работы с сокетами: {err.errno}')
 
             # принимаем сообщения и если ошибка, исключаем клиента.
             if recv_data_lst:
@@ -86,14 +90,14 @@ class MessageProcessor(threading.Thread):
                             get_message(client_with_message),
                             client_with_message)
                     except (OSError, json.JSONDecodeError, TypeError) as err:
-                        logger.debug(f"Getting data from client exception.",
+                        Logger.debug(f"Getting data from client exception.",
                                      exc_info=err)
                         self.remove_client(client_with_message)
 
-    # Метод обработчик клиента с которым прервана связь.
-    # Ищет клиента и удаляет его из списков и базы:
     def remove_client(self, client):
-        logger.info(f'Клиент {client.getpeername()} отключился от сервера.')
+        """ Метод обработчик клиента с которым прервана связь.
+            Ищет клиента и удаляет его из списков и базы:"""
+        Logger.info(f'Клиент {client.getpeername()} отключился от сервера.')
         for name in self.names:
             if self.names[name] == client:
                 self.database.user_logout(name)
@@ -102,9 +106,9 @@ class MessageProcessor(threading.Thread):
         self.clients.remove(client)
         client.close()
 
-    # Метод инициализатор сокета.
     def init_socket(self):
-        logger.info(
+        """ Метод инициализатор сокета."""
+        Logger.info(
             f'Запущен сервер, порт для подключений: {self.port},'
             f' адрес с которого принимаются подключения: {self.addr}.'
             f' Если адрес не указан, принимаются соединения с любых адресов.')
@@ -117,32 +121,32 @@ class MessageProcessor(threading.Thread):
         self.sock = transport
         self.sock.listen(MAX_CONNECTIONS)
 
-    # Метод отправки сообщения клиенту.
     def process_message(self, message):
+        """ Метод отправки сообщения клиенту."""
         if message[DESTINATION] in self.names and \
                 self.names[message[DESTINATION]] in self.listen_sockets:
             try:
                 send_message(self.names[message[DESTINATION]], message)
-                logger.info(f'Отправлено сообщение пользователю '
+                Logger.info(f'Отправлено сообщение пользователю '
                             f'{message[DESTINATION]} от пользователя '
                             f'{message[SENDER]}.')
             except OSError:
                 self.remove_client(message[DESTINATION])
         elif message[DESTINATION] in self.names and \
                 self.names[message[DESTINATION]] not in self.listen_sockets:
-            logger.error(f"Связь с клиентом {message[DESTINATION]}"
+            Logger.error(f"Связь с клиентом {message[DESTINATION]}"
                          f" была потеряна. Соединение закрыто,"
                          f" доставка невозможна.")
             self.remove_client(self.names[message[DESTINATION]])
         else:
-            logger.error(
+            Logger.error(
                 f'Пользователь {message[DESTINATION]} не зарегистрирован'
                 f' на сервере, отправка сообщения невозможна.')
 
-    # Метод отбработчик поступающих сообщений.
     # @login_required
     def process_client_message(self, message, client):
-        logger.debug(f'Разбор сообщения от клиента : {message}')
+        """ Метод отбработчик поступающих сообщений."""
+        Logger.debug(f'Разбор сообщения от клиента : {message}')
         # Если это сообщение о присутствии, принимаем и отвечаем
         if ACTION in message and message[ACTION] == PRESENCE \
                 and TIME in message and USER in message:
@@ -249,18 +253,18 @@ class MessageProcessor(threading.Thread):
             except OSError:
                 self.remove_client(client)
 
-    # Метод реализующий авторизцию пользователей.
     def autorize_user(self, message, sock):
+        """ Метод реализующий авторизцию пользователей."""
         # Если имя пользователя уже занято то возвращаем 400
-        logger.debug(f'Start auth process for {message[USER]}')
+        Logger.debug(f'Start auth process for {message[USER]}')
         if message[USER][ACCOUNT_NAME] in self.names.keys():
             response = RESPONSE_400
             response[ERROR] = 'Имя пользователя уже занято.'
             try:
-                logger.debug(f'Username busy, sending {response}')
+                Logger.debug(f'Username busy, sending {response}')
                 send_message(sock, response)
             except OSError:
-                logger.debug('OS Error')
+                Logger.debug('OS Error')
                 pass
             self.clients.remove(sock)
             sock.close()
@@ -269,14 +273,14 @@ class MessageProcessor(threading.Thread):
             response = RESPONSE_400
             response[ERROR] = 'Пользователь не зарегистрирован.'
             try:
-                logger.debug(f'Unknown username, sending {response}')
+                Logger.debug(f'Unknown username, sending {response}')
                 send_message(sock, response)
             except OSError:
                 pass
             self.clients.remove(sock)
             sock.close()
         else:
-            logger.debug('Correct username, starting passwd check.')
+            Logger.debug('Correct username, starting passwd check.')
             # Иначе отвечаем 511 и проводим процедуру авторизации
             # Словарь - заготовка
             message_auth = RESPONSE_511
@@ -286,19 +290,19 @@ class MessageProcessor(threading.Thread):
             message_auth[DATA] = random_str.decode('ascii')
             # Создаём хэш пароля и связки с рандомной строкой, сохраняем
             # серверную версию ключа
-            hash = hmac.new(
+            HASH = hmac.new(
                 self.database.get_hash(
                     message[USER][ACCOUNT_NAME]),
                 random_str,
                 'MD5')
-            digest = hash.digest()
-            logger.debug(f'Auth message = {message_auth}')
+            digest = HASH.digest()
+            Logger.debug(f'Auth message = {message_auth}')
             try:
                 # Обмен с клиентом
                 send_message(sock, message_auth)
                 ans = get_message(sock)
             except OSError as err:
-                logger.debug('Error in auth, data:', exc_info=err)
+                Logger.debug('Error in auth, data:', exc_info=err)
                 sock.close()
                 return
             client_digest = binascii.a2b_base64(ans[DATA])
@@ -329,8 +333,8 @@ class MessageProcessor(threading.Thread):
                 self.clients.remove(sock)
                 sock.close()
 
-    # Метод реализующий отправки сервисного сообщения 205 клиентам.
     def service_update_lists(self):
+        """ Метод реализующий отправки сервисного сообщения 205 клиентам."""
         for client in self.names:
             try:
                 send_message(self.names[client], RESPONSE_205)

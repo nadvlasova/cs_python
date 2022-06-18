@@ -21,7 +21,7 @@ while True:
         # start server
         process.append(
             subprocess.Popen(
-                'gnome-terminal -- python3 time_server.py',
+                'gnome-terminal -- python3 server.py',
                 shell=True))
 
         # Запускаем клиентов:
@@ -29,7 +29,7 @@ while True:
         for i in range(clients_count):
             process.append(
                 subprocess.Popen(
-                    f'gnome-terminal -- python3 time_client.py -n Test{i}',
+                    f'gnome-terminal -- python3 client.py -n Test{i}',
                     shell=True))
     elif action == 't':
 

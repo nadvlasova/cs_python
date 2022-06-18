@@ -1,24 +1,30 @@
-""" Класс - оболочка для работы с базой данных сервера. Использует SQLite
-базу данных, реализован с помощью SQLAlchemy ORM
-и используется классический подход. """
+""" Серверная база данных."""
+
+import os
+from datetime import datetime
+
 from sqlalchemy import create_engine, Table, Column, Integer, String, \
     MetaData, ForeignKey, DateTime, Text
 from sqlalchemy.orm import mapper, sessionmaker
-import datetime
 
 
 class ServerStorage:
+    """ Класс - оболочка для работы с базой данных сервера. Использует SQLite
+    базу данных, реализован с помощью SQLAlchemy ORM
+    и используется классический подход. """
     class AllUsers:
         """Класс - отображение таблицы всех пользователей."""
+
         def __init__(self, username, passwd_hash):
             self.name = username
-            self.last_login = datetime.datetime.now()
+            self.last_login = datetime.now()
             self.passwd_hash = passwd_hash
             self.pubkey = None
             self.id = None
 
     class ActiveUsers:
         """Класс - отображение таблицы активных пользователей."""
+
         def __init__(self, user_id, ip_address, port, login_time):
             self.user = user_id
             self.ip_address = ip_address
@@ -28,15 +34,17 @@ class ServerStorage:
 
     class LoginHistory:
         """Класс - отображение таблицы истории входов."""
-        def __init__(self, name, date, ip, port):
+
+        def __init__(self, name, date, ip_address, port):
             self.id = None
             self.name = name
             self.date_time = date
-            self.ip = ip
+            self.ip_address = ip_address
             self.port = port
 
     class UsersContacts:
         """Класс - отображение таблицы контактов пользователей."""
+
         def __init__(self, user, contact):
             self.id = None
             self.user = user
@@ -44,6 +52,7 @@ class ServerStorage:
 
     class UsersHistory:
         """Класс - отображение таблицы истории действий."""
+
         def __init__(self, user):
             self.id = None
             self.user = user
@@ -132,37 +141,35 @@ class ServerStorage:
         # именем
         rez = self.session.query(self.AllUsers).filter_by(name=username)
 
-        # Если имя пользователя уже присутствует в таблице, обновляем время последнего входа
-        # и проверяем корректность ключа. Если клиент прислал новый ключ,
-        # сохраняем его.
+        # Если имя пользователя уже присутствует в таблице, обновляем время
+        # последнего входа и проверяем корректность ключа.
+        # Если клиент прислал новый ключ, сохраняем его.
         if rez.count():
             user = rez.first()
-            user.last_login = datetime.datetime.now()
+            user.last_login = datetime.now()
             if user.pubkey != key:
                 user.pubkey = key
-        # Если нету, то генерируем исключение
+        # Если нет, то генерируем исключение.
         else:
             raise ValueError('Пользователь не зарегистрирован.')
 
         # Теперь можно создать запись в таблицу активных пользователей о факте
         # входа.
         new_active_user = self.ActiveUsers(
-            user.id, ip_address, port, datetime.datetime.now())
+            user.id, ip_address, port, datetime.now())
         self.session.add(new_active_user)
 
         # и сохранить в историю входов
         history = self.LoginHistory(
-            user.id, datetime.datetime.now(), ip_address, port)
+            user.id, datetime.now(), ip_address, port)
         self.session.add(history)
 
         # Сохрраняем изменения
         self.session.commit()
 
     def add_user(self, name, passwd_hash):
-        '''
-        Метод регистрации пользователя.
-        Принимает имя и хэш пароля, создаёт запись в таблице статистики.
-        '''
+        ''' Метод регистрации пользователя.
+        Принимает имя и хэш пароля, создаёт запись в таблице статистики.'''
         user_row = self.AllUsers(name, passwd_hash)
         self.session.add(user_row)
         self.session.commit()
@@ -203,8 +210,7 @@ class ServerStorage:
     def user_logout(self, username):
         """Метод фиксирующий отключения пользователя."""
         # Запрашиваем пользователя, что покидает нас
-        user = self.session.query(
-            self.AllUsers).filter_by(
+        user = self.session.query(self.AllUsers).filter_by(
             name=username).first()
 
         # Удаляем его из таблицы активных пользователей.
@@ -305,7 +311,7 @@ class ServerStorage:
         # Запрашиваем историю входа
         query = self.session.query(self.AllUsers.name,
                                    self.LoginHistory.date_time,
-                                   self.LoginHistory.ip,
+                                   self.LoginHistory.ip_address,
                                    self.LoginHistory.port
                                    ).join(self.AllUsers)
         # Если было указано имя пользователя, то фильтруем по нему

@@ -1,15 +1,17 @@
-""" Диалог удаления контакта. Прделагает текущий список контактов,
-    не имеет обработчиков для действий."""
+""" Удаление контакта."""
 import logging
 
 from PyQt5.QtWidgets import QDialog, QLabel, QComboBox, QPushButton, \
     QApplication
 from PyQt5.QtCore import Qt
 
-logger = logging.getLogger('client')
+Logger = logging.getLogger('client')
 
 
 class DelContactDialog(QDialog):
+    """ Диалог удаления контакта. Предлагает текущий список контактов,
+        не имеет обработчиков для действий."""
+
     def __init__(self, database):
         super().__init__()
         self.database = database

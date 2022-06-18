@@ -1,8 +1,9 @@
 """ Конфигурация окна настроек. """
+
+import os
 from PyQt5.QtWidgets import QDialog, QLabel, QLineEdit, QPushButton, \
     QFileDialog, QMessageBox
 from PyQt5.QtCore import Qt
-import os
 
 
 class ConfigWindow(QDialog):
@@ -76,7 +77,7 @@ class ConfigWindow(QDialog):
         self.save_btn = QPushButton('Сохранить', self)
         self.save_btn.move(190, 220)
 
-        # Кнапка закрытия окна
+        # Кнопка закрытия окна
         self.close_button = QPushButton('Закрыть', self)
         self.close_button.move(275, 220)
         self.close_button.clicked.connect(self.close)
@@ -101,11 +102,9 @@ class ConfigWindow(QDialog):
         self.db_path.insert(path)
 
     def save_server_config(self):
-        """
-        Метод сохранения настроек.
+        """ Метод сохранения настроек.
         Проверяет правильность введённых данных и
-        если всё правильно сохраняет ini файл.
-        """
+        если всё правильно сохраняет ini файл."""
         global config_window
         message = QMessageBox()
         self.config['SETTINGS']['Database_path'] = self.db_path.text()

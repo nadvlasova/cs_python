@@ -2,13 +2,13 @@
 import json
 import sys
 
-from .decos import log
-from .variables import MAX_PACKAGE_LENGTH, ENCODING
+from common.decos import log
+from common.variables import MAX_PACKAGE_LENGTH, ENCODING
 
 sys.path.append('../')
 
 
-@log
+# @log
 def get_message(client):
     """
     Функция приёма сообщений от удалённых компьютеров.
@@ -25,7 +25,7 @@ def get_message(client):
     raise TypeError
 
 
-@log
+# @log
 def send_message(sock, message):
     """
     Функция отправки словарей через сокет.

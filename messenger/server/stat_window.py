@@ -1,10 +1,11 @@
-""" Класс - окно со статистикой пользователей. """
+""" Окно статистики входов клиентов."""
 from PyQt5.QtWidgets import QDialog, QPushButton, QTableView
 from PyQt5.QtGui import QStandardItemModel, QStandardItem
 from PyQt5.QtCore import Qt
 
 
 class StatWindow(QDialog):
+    """ Класс - окно со статистикой пользователей. """
     def __init__(self, database):
         super().__init__()
 
@@ -12,7 +13,7 @@ class StatWindow(QDialog):
         self.initUI()
 
     def initUI(self):
-        # Настройки окна:
+        """Настройки окна:"""
         self.setWindowTitle('Статистика клиентов')
         self.setFixedSize(600, 700)
         self.setAttribute(Qt.WA_DeleteOnClose)

@@ -61,10 +61,8 @@ class RegisterUser(QDialog):
         self.show()
 
     def save_data(self):
-        """
-        Метод проверки правильности ввода
-        и сохранения в базу нового пользователя.
-        """
+        """ Метод проверки правильности ввода
+        и сохранения в базу нового пользователя."""
         if not self.client_name.text():
             self.messages.critical(
                 self, 'Ошибка', 'Не указано имя пользователя.')
@@ -83,7 +81,7 @@ class RegisterUser(QDialog):
             passwd_bytes = self.client_passwd.text().encode('utf-8')
             salt = self.client_name.text().lower().encode('utf-8')
             passwd_hash = hashlib.pbkdf2_hmac(
-                'sha512', passwd_bytes, salt, 10000)
+                'sha512', passwd_bytes, salt, 100000)
             self.database.add_user(
                 self.client_name.text(),
                 binascii.hexlify(passwd_hash))
@@ -97,5 +95,5 @@ class RegisterUser(QDialog):
 if __name__ == '__main__':
     app = QApplication([])
     app.setAttribute(Qt.AA_DisableWindowContextHelpButton)
-    dial = RegisterUser(None)
+    dial = RegisterUser(None, None)
     app.exec_()

@@ -1,10 +1,11 @@
+""" Запуск клиента! """
 import argparse
 import sys
 import os
 
-
 from Cryptodome.PublicKey import RSA
 from PyQt5.QtWidgets import QApplication, QMessageBox
+import logging
 
 from common.variables import *
 from common.errors import ServerError
@@ -15,14 +16,14 @@ from client.main_window import ClientMainWindow
 from client.start_dialog import UserNameDialog
 
 # Инициализация клиентского логера
-logger = logging.getLogger('client')
+Logger = logging.getLogger('client')
 
 
-# Парсер аргументов коммандной строки, возвращает кортеж из 4 элементов
-# адрес сервера, порт, имя пользователя, пароль.
-# Выполняет проверку на корректность номера порта.
 @log
 def arg_parser():
+    """Парсер аргументов коммандной строки, возвращает кортеж из 4 элементов
+    адрес сервера, порт, имя пользователя, пароль.
+    Выполняет проверку на корректность номера порта."""
     parser = argparse.ArgumentParser()
     parser.add_argument('addr', default=DEFAULT_IP_ADDRESS, nargs='?')
     parser.add_argument('port', default=DEFAULT_PORT, type=int, nargs='?')
@@ -36,9 +37,11 @@ def arg_parser():
 
     # проверим подходящий номер порта
     if not 1023 < server_port < 65536:
-        logger.critical(
-            f'Попытка запуска клиента с неподходящим номером порта: {server_port}. Допустимы адреса с 1024 до 65535. Клиент завершается.')
-        exit(1)
+        Logger.critical(
+            f'Попытка запуска клиента с неподходящим номером порта: '
+            f'{server_port}. Допустимы адреса с 1024 до 65535. '
+            f'Клиент завершается.')
+        sys.exit(1)
 
     return server_address, server_port, client_name, client_passwd
 
@@ -47,7 +50,7 @@ def arg_parser():
 if __name__ == '__main__':
     # Загружаем параметы коммандной строки
     server_address, server_port, client_name, client_passwd = arg_parser()
-    logger.debug('Args loaded')
+    Logger.debug('Args loaded')
 
     # Создаём клиентокое приложение
     client_app = QApplication(sys.argv)
@@ -61,13 +64,13 @@ if __name__ == '__main__':
         if start_dialog.ok_pressed:
             client_name = start_dialog.client_name.text()
             client_passwd = start_dialog.client_passwd.text()
-            logger.debug(
+            Logger.debug(
                 f'Using USERNAME = {client_name}, PASSWD = {client_passwd}.')
         else:
-            exit(0)
+            sys.exit(0)
 
     # Записываем логи.
-    logger.info(
+    Logger.info(
         f'Запущен клиент с парамертами: адрес сервера: {server_address},'
         f' порт: {server_port}, имя пользователя: {client_name}')
 
@@ -83,7 +86,7 @@ if __name__ == '__main__':
             keys = RSA.import_key(key.read())
 
     # !!!keys.publickey().export_key()
-    logger.debug("Keys successfully loaded.")
+    Logger.debug("Keys successfully loaded.")
     # Создаём объект базы данных
     database = ClientDatabase(client_name)
     # Создаём объект - транспорт и запускаем транспортный поток.
@@ -95,11 +98,11 @@ if __name__ == '__main__':
             client_name,
             client_passwd,
             keys)
-        logger.debug("Transport ready.")
+        Logger.debug("Transport ready.")
     except ServerError as error:
         message = QMessageBox()
         message.critical(start_dialog, 'Ошибка сервера', error.text)
-        exit(1)
+        sys.exit(1)
     transport.setDaemon(True)
     transport.start()
 

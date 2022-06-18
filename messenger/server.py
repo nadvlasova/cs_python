@@ -1,3 +1,4 @@
+""" Запуск сервера! """
 import sys
 import os
 import argparse
@@ -14,12 +15,13 @@ from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import Qt
 
 # Инициализация логирования сервера.
-logger = logging.getLogger('server')
+Logger = logging.getLogger('server')
 
-# Парсер аргументов коммандной строки.
+
 @log
 def arg_parser(default_port, default_address):
-    logger.debug(
+    """ Парсер аргументов коммандной строки."""
+    Logger.debug(
         f'Инициализация парсера аргументов коммандной строки: {sys.argv}')
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', default=default_port, type=int, nargs='?')
@@ -29,12 +31,13 @@ def arg_parser(default_port, default_address):
     listen_address = namespace.a
     listen_port = namespace.p
     gui_flag = namespace.no_gui
-    logger.debug('Аргументы успешно загружены.')
+    Logger.debug('Аргументы успешно загружены.')
     return listen_address, listen_port, gui_flag
 
-# Парсер конфигурационного ini файла.
+
 @log
 def config_load():
+    """ Парсер конфигурационного ini файла."""
     config = configparser.ConfigParser()
     dir_path = os.path.dirname(os.path.realpath(__file__))
     config.read(f"{dir_path}/{'server.ini'}")
@@ -50,16 +53,18 @@ def config_load():
         config.set('SETTINGS', 'Database_file', 'server_database.db3')
         return config
 
-# Основная функция.
+
 @log
 def main():
+    """ Основная функция."""
     # Загрузка файла конфигурации сервера
     config = config_load()
 
     # Загрузка параметров командной строки, если нет параметров, то задаём
     # значения по умоланию.
     listen_address, listen_port, gui_flag = arg_parser(
-        config['SETTINGS']['Default_port'], config['SETTINGS']['Listen_Address'])
+        config['SETTINGS']['Default_port'],
+        config['SETTINGS']['Listen_Address'])
 
     # Инициализация базы данных
     database = ServerStorage(

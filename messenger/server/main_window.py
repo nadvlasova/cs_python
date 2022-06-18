@@ -1,7 +1,9 @@
-"""Класс - основное окно сервера."""
+""" Основное окно сервера."""
+
 from PyQt5.QtWidgets import QMainWindow, QAction, qApp, QLabel, QTableView
 from PyQt5.QtGui import QStandardItemModel, QStandardItem
 from PyQt5.QtCore import QTimer
+
 from server.stat_window import StatWindow
 from server.config_window import ConfigWindow
 from server.add_user import RegisterUser
@@ -9,6 +11,8 @@ from server.remove_user import DelUserDialog
 
 
 class MainWindow(QMainWindow):
+    """Класс - основное окно сервера."""
+
     def __init__(self, database, server, config):
         # Конструктор предка
         super().__init__()
@@ -90,18 +94,18 @@ class MainWindow(QMainWindow):
         list_active_users.setHorizontalHeaderLabels(
             ['Имя Клиента', 'IP Адрес', 'Порт', 'Время подключения'])
         for row in list_users:
-            user, ip, port, time = row
+            user, ip_address, port, time = row
             user = QStandardItem(user)
             user.setEditable(False)
-            ip = QStandardItem(ip)
-            ip.setEditable(False)
+            ip_address = QStandardItem(ip_address)
+            ip_address.setEditable(False)
             port = QStandardItem(str(port))
             port.setEditable(False)
             # Уберём милисекунды из строки времени, т.к. такая точность не
             # требуется.
             time = QStandardItem(str(time.replace(microsecond=0)))
             time.setEditable(False)
-            list_active_users.appendRow([user, ip, port, time])
+            list_active_users.appendRow([user, ip_address, port, time])
         self.active_clients_table.setModel(list_active_users)
         self.active_clients_table.resizeColumnsToContents()
         self.active_clients_table.resizeRowsToContents()

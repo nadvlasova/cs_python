@@ -1,5 +1,0 @@
-2022-04-25 07:20:55,123 CRITICAL config_server_log.py Критическая ошибка!!!
-2022-04-25 07:20:55,123 ERROR config_server_log.py Ошибка!
-2022-04-25 07:20:55,123 WARNING config_server_log.py Предупреждение!
-2022-04-25 07:20:55,123 DEBUG config_server_log.py Отладочная информация.
-2022-04-25 07:20:55,123 INFO config_server_log.py Информационное сообщение.
