@@ -17,8 +17,11 @@ def main():
         elif action == 's':
             # Запускаем сервер!
             process.append(
-                subprocess.Popen('gnome-terminal -- python3 server.py',
-                                 stdout=subprocess.PIPE, stderr=None, shell=True))
+                subprocess.Popen(
+                    'gnome-terminal -- python3 server.py',
+                    stdout=subprocess.PIPE,
+                    stderr=None,
+                    shell=True))
         elif action == 'k':
             print('Убедитесь, что на сервере зарегистрировано необходимое '
                   'количество клиентов с паролем 1.')
@@ -39,12 +42,6 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-
-
-
-
 
 
 # def main():

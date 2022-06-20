@@ -1,4 +1,4 @@
-""" Файл конфигурации пользовательского окна. """
+# """ Файл конфигурации пользовательского окна. """
 
 # Form implementation generated from reading ui file 'client.ui'
 #

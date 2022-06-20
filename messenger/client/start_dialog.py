@@ -1,4 +1,4 @@
-""" Отображение окна с запросом имени и пароля пользователя."""
+# """ Отображение окна с запросом имени и пароля пользователя."""
 
 from PyQt5.QtWidgets import QDialog, QPushButton, QLineEdit, QApplication, \
     QLabel, qApp

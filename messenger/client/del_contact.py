@@ -1,4 +1,4 @@
-""" Удаление контакта."""
+# """ Удаление контакта."""
 import logging
 
 from PyQt5.QtWidgets import QDialog, QLabel, QComboBox, QPushButton, \
